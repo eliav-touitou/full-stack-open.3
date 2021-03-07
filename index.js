@@ -32,6 +32,11 @@ let persons = [
     number: "0545798645",
   },
 ];
+app.use("/", express.static(`./build`));
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "./index.html");
+});
 
 app.get("/api/persons", (req, res) => {
   res.json(persons);
@@ -72,6 +77,6 @@ app.post("/api/persons", (req, res) => {
   res.send(newContact);
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
