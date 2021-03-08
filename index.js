@@ -41,21 +41,17 @@ app.get("/info", (req, res) => {
       res.status(500).json({ error: "server error" });
     });
 });
-app.get("/api/persons/:id", validId, (req, res) => {
-  const id = Number(req.params.id);
-  // const person = Person.find((person) => person.id === id);
-  // res.json(person);
+app.get("/api/persons/:id", validId, (request, response) => {
+  const id = Number(request.params.id);
   Person.find({ id })
-    .then((result) => {
-      if (result) {
-        response.json(result);
+    .then((person) => {
+      if (person) {
+        response.json(person);
       } else {
-        response.status(404).end();
+        response.status(404).send("Not found");
       }
     })
-    .catch((e) => {
-      res.status(500).json({ error: "server error" });
-    });
+    .catch((e) => res.status(500).json({ ERROR: "Server Error" }));
 });
 app.delete("/api/persons/:id", validId, (request, response) => {
   const id = Number(request.params.id);
