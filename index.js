@@ -68,6 +68,18 @@ app.delete("/api/persons/:id", validId, (request, response) => {
       res.status(500).json({ error: "server error" });
     });
 });
+app.put("/api/persons/:id", validId, (request, response) => {
+  const { body } = request;
+  const { id } = request.params;
+
+  const person = {
+    id: id,
+    number: body.number,
+  };
+  Person.updateOne({ id }, person, { new: true }).then((updatedPerson) => {
+    response.json(updatedPerson);
+  });
+});
 
 app.post("/api/persons", (req, res) => {
   const newContact = req.body;
@@ -104,10 +116,9 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 function validId(req, res, next) {
-  const id = Number(req.params.id);
-  if (!id) {
-    res.status(400).json({ error: "invalid id" });
-    return;
+  const { id } = req.params;
+  if (isNaN(Number(id))) {
+    return res.status(400).json({ message: "Invalid ID" });
   }
   next();
 }
