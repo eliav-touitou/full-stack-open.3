@@ -18,39 +18,55 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/persons", (req, res) => {
-  Person.find({}).then((result) => {
-    console.log(result);
-    res.json(result);
-  });
+  Person.find({})
+    .then((result) => {
+      console.log(result);
+      res.json(result);
+    })
+    .catch((e) => {
+      res.status(500).json({ error: "server error" });
+    });
 });
 
 app.get("/info", (req, res) => {
   const date = new Date().toString();
 
-  Person.find({}).then((result) => {
-    res.send(
-      `<div>Phone-book has info for ${result.length} people.</div><div> ${date} </div>`
-    );
-  });
+  Person.find({})
+    .then((result) => {
+      res.send(
+        `<div>Phone-book has info for ${result.length} people.</div><div> ${date} </div>`
+      );
+    })
+    .catch((e) => {
+      res.status(500).json({ error: "server error" });
+    });
 });
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", validId, (req, res) => {
   const id = Number(req.params.id);
   // const person = Person.find((person) => person.id === id);
   // res.json(person);
-  Person.find({ id }).then((result) => {
-    if (result) {
-      response.json(result);
-    } else {
-      response.status(404).end();
-    }
-  });
+  Person.find({ id })
+    .then((result) => {
+      if (result) {
+        response.json(result);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((e) => {
+      res.status(500).json({ error: "server error" });
+    });
 });
-app.delete("/api/persons/:id", (request, response) => {
+app.delete("/api/persons/:id", validId, (request, response) => {
   const id = Number(request.params.id);
 
-  Person.remove({ id }).then((res) => {
-    response.status(204).end();
-  });
+  Person.remove({ id })
+    .then((res) => {
+      response.status(204).end();
+    })
+    .catch((e) => {
+      res.status(500).json({ error: "server error" });
+    });
 });
 
 app.post("/api/persons", (req, res) => {
@@ -73,12 +89,25 @@ app.post("/api/persons", (req, res) => {
     number: newContact.number,
   });
 
-  person.save().then((savedPerson) => {
-    response.json(savedPerson);
-  });
+  person
+    .save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    })
+    .catch((e) => {
+      res.status(500).json({ error: "server error" });
+    });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+function validId(req, res, next) {
+  const id = Number(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  next();
+}
