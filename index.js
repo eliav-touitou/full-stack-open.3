@@ -1,38 +1,16 @@
+require("dotenv").config();
+const Person = require("./models/person");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const app = express();
 app.use(express.json());
-app.use(morgan("tiny"));
 morgan.token("body", (req, res) => JSON.stringify(req.body));
 app.use(
   morgan(":method :url :status :response-time ms - :res[content-length] :body")
 );
 app.use(cors());
 
-let persons = [
-  {
-    id: 1,
-    name: "Dany Fish",
-    number: "0545798445",
-  },
-  {
-    id: 2,
-    name: "Dan Fishman",
-    number: "0545798333",
-  },
-  {
-    id: 3,
-    name: "Daniel Fishy",
-    number: "0506798445",
-  },
-  {
-    id: 4,
-    name: "Dony Fishburg",
-    number: "0545798645",
-  },
-];
 app.use("/", express.static(`./build`));
 
 app.get("/", (req, res) => {
@@ -40,44 +18,67 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.find({}).then((result) => {
+    console.log(result);
+    res.json(result);
+  });
 });
 
 app.get("/info", (req, res) => {
   const date = new Date().toString();
-  res.send(
-    `<div>Phone-book has info for ${persons.length} people.</div><div> ${date} </div>`
-  );
+
+  Person.find({}).then((result) => {
+    res.send(
+      `<div>Phone-book has info for ${result.length} people.</div><div> ${date} </div>`
+    );
+  });
 });
 app.get("/api/persons/:id", (req, res) => {
   const id = Number(req.params.id);
-  const person = persons.find((person) => person.id === id);
-  res.json(person);
+  // const person = Person.find((person) => person.id === id);
+  // res.json(person);
+  Person.find({ id }).then((result) => {
+    if (result) {
+      response.json(result);
+    } else {
+      response.status(404).end();
+    }
+  });
 });
-app.delete("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  persons = persons.filter((person) => person.id !== id);
-  res.status(204).end();
+app.delete("/api/persons/:id", (request, response) => {
+  const id = Number(request.params.id);
+
+  Person.remove({ id }).then((res) => {
+    response.status(204).end();
+  });
 });
+
 app.post("/api/persons", (req, res) => {
   const newContact = req.body;
-
+  console.log(req);
   if (!newContact.name || !newContact.number) {
     return res.status(404).send({ error: `must insert name + number` });
   }
-  let existingName = persons.find((person) => person.name === newContact.name);
-  if (existingName) {
-    return res
-      .status(400)
-      .send({ error: `This name is already taken in the phoneBook` });
-  }
-  const id = Math.floor(Math.random() * 1000);
+  Person.find({ name: newContact.name }).then((result) => {
+    if (result) {
+      return res
+        .status(400)
+        .send({ error: `This name is already taken in the phoneBook` });
+    }
+  });
 
-  newContact.id = id;
-  persons.push(newContact);
-  res.send(newContact);
+  const person = new Person({
+    id: Math.floor(Math.random() * 1000),
+    name: newContact.name,
+    number: newContact.number,
+  });
+
+  person.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT);
-console.log(`Server running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
