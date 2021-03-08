@@ -18,21 +18,31 @@ mongoose.connect(url, {
   useCreateIndex: true,
 });
 
-const person = new mongoose.Schema({
-  neme: String,
-  date: Date,
-  id: number,
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: Number,
+  id: Number,
 });
 
-const Note = mongoose.model("persons", person);
+const Person = mongoose.model("persons", personSchema);
 
-const note = new Note({
-  content: "HTML is Easy",
-  date: new Date(),
-  important: true,
+const person = new Person({
+  name: process.argv[3],
+  number: process.argv[4],
+  id: Math.floor(Math.random() * 1000),
 });
 
-note.save().then((result) => {
-  console.log("new contact saved!");
-  mongoose.connection.close();
-});
+if (!process.argv[3] && !process.argv[4]) {
+  Person.find({}).then((result) => {
+    result.forEach((person) => {
+      console.log(person);
+      mongoose.connection.close();
+      process.exit[1];
+    });
+  });
+} else {
+  person.save().then((result) => {
+    console.log(`${result} was saved!`);
+    mongoose.connection.close();
+  });
+}
