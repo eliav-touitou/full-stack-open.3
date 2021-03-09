@@ -77,7 +77,7 @@ app.put("/api/persons/:id", validId, (request, response) => {
   });
 });
 
-app.post("/api/persons", isUnique, async (req, res, next) => {
+app.post("/api/persons", isUnique, async (req, res) => {
   const newContact = req.body;
   // console.log(req);
   // if (!newContact.name || !newContact.number) {
