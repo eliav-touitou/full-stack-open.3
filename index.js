@@ -5,13 +5,13 @@ const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
 app.use(express.json());
-morgan.token("body", (req, res) => JSON.stringify(req.body));
+morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(
   morgan(":method :url :status :response-time ms - :res[content-length] :body")
 );
 app.use(cors());
 
-app.use("/", express.static(`./build`));
+app.use("/", express.static("./build"));
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "./index.html");
@@ -23,7 +23,7 @@ app.get("/api/persons", (req, res) => {
       console.log(result);
       res.json(result);
     })
-    .catch((e) => {
+    .catch(() => {
       res.status(500).json({ error: "server error" });
     });
 });
@@ -37,7 +37,7 @@ app.get("/info", (req, res) => {
         `<div>Phone-book has info for ${result.length} people.</div><div> ${date} </div>`
       );
     })
-    .catch((e) => {
+    .catch(() => {
       res.status(500).json({ error: "server error" });
     });
 });
@@ -51,17 +51,17 @@ app.get("/api/persons/:id", validId, (request, response) => {
         response.status(404).send("Not found");
       }
     })
-    .catch((e) => res.status(500).json({ ERROR: "Server Error" }));
+    .catch((e) => response.status(500).json({ ERROR: "Server Error" }));
 });
 app.delete("/api/persons/:id", validId, (request, response) => {
   const id = Number(request.params.id);
 
   Person.deleteOne({ id })
-    .then((res) => {
+    .then(() => {
       response.status(204).end();
     })
-    .catch((e) => {
-      res.status(500).json({ error: "server error" });
+    .catch(() => {
+      response.status(500).json({ error: "server error" });
     });
 });
 app.put("/api/persons/:id", validId, (request, response) => {
@@ -77,19 +77,8 @@ app.put("/api/persons/:id", validId, (request, response) => {
   });
 });
 
-app.post("/api/persons", isUnique, async (req, res) => {
+app.post("/api/persons", uniqueName, async (req, response) => {
   const newContact = req.body;
-  // console.log(req);
-  // if (!newContact.name || !newContact.number) {
-  //   return res.status(404).send({ error: `must insert name + number` });
-  // }
-  // Person.find({ name: newContact.name }).then((result) => {
-  //   if (result) {
-  //     return res
-  //       .status(400)
-  //       .send({ error: `This name is already taken in the phoneBook` });
-  //   }
-  // });
 
   const person = new Person({
     id: Math.floor(Math.random() * 1000),
@@ -119,12 +108,12 @@ function validId(req, res, next) {
   }
   next();
 }
-async function isUnique(req, res, next) {
+async function uniqueName(req, res, next) {
   const { body } = req;
 
   try {
-    const isUnique = await Person.find({ name: body.name });
-    if (isUnique.length !== 0) {
+    const uniqueName = await Person.find({ name: body.name });
+    if (uniqueName.length !== 0) {
       return res.status(400).json({ error: "name must be unique" });
     }
     next();
