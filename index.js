@@ -56,7 +56,7 @@ app.get("/api/persons/:id", validId, (request, response) => {
 app.delete("/api/persons/:id", validId, (request, response) => {
   const id = Number(request.params.id);
 
-  Person.remove({ id })
+  Person.deleteOne({ id })
     .then((res) => {
       response.status(204).end();
     })
@@ -77,19 +77,19 @@ app.put("/api/persons/:id", validId, (request, response) => {
   });
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", isUnique, async (req, res, next) => {
   const newContact = req.body;
-  console.log(req);
-  if (!newContact.name || !newContact.number) {
-    return res.status(404).send({ error: `must insert name + number` });
-  }
-  Person.find({ name: newContact.name }).then((result) => {
-    if (result) {
-      return res
-        .status(400)
-        .send({ error: `This name is already taken in the phoneBook` });
-    }
-  });
+  // console.log(req);
+  // if (!newContact.name || !newContact.number) {
+  //   return res.status(404).send({ error: `must insert name + number` });
+  // }
+  // Person.find({ name: newContact.name }).then((result) => {
+  //   if (result) {
+  //     return res
+  //       .status(400)
+  //       .send({ error: `This name is already taken in the phoneBook` });
+  //   }
+  // });
 
   const person = new Person({
     id: Math.floor(Math.random() * 1000),
@@ -102,15 +102,16 @@ app.post("/api/persons", (req, res) => {
     .then((savedPerson) => {
       response.json(savedPerson);
     })
-    .catch((e) => {
-      res.status(500).json({ error: "server error" });
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        return response.status(400).json({ error: err.message });
+      }
+      return response
+        .status(500)
+        .send({ error: "Problems with our server", message: error.message });
     });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 function validId(req, res, next) {
   const { id } = req.params;
   if (isNaN(Number(id))) {
@@ -118,3 +119,22 @@ function validId(req, res, next) {
   }
   next();
 }
+async function isUnique(req, res, next) {
+  const { body } = req;
+
+  try {
+    const isUnique = await Person.find({ name: body.name });
+    if (isUnique.length !== 0) {
+      return res.status(400).json({ error: "name must be unique" });
+    }
+    next();
+  } catch {
+    return res
+      .status(500)
+      .send({ error: "Problems with our server", message: error.message });
+  }
+}
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
